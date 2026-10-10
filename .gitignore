@@ -1,0 +1,22 @@
+build/
+release/
+*.user
+data/
+runtime/
+*.lnk
+frontend/node_modules/
+frontend/dist/
+.idea/
+.vscode/
+*.log
+*.tmp
+.env
+.env.*
+!.env.example
+# Private migration history, personal preferences and reference attachments
+docs/design/
+docs/reference/
+design-qa.md
+migrate-to-d.ps1
+measure-resources.ps1
+*.local.ps1
