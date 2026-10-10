@@ -7,16 +7,7 @@
 .composer-bottom>div{margin-left:auto;display:flex;align-items:center;gap:10px}.composer-options>input[type=time]{width:110px;padding:5px 9px;font-size:11px}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.editor-reminder{display:flex;gap:14px;align-items:center;margin:18px 0;font-size:12px;color:#7a7a84}.editor-reminder label{display:flex;gap:8px;align-items:center}.editor-reminder input[type=time]{padding:6px 10px}.field-tip{font-size:10px;color:#a0a0a8}
 @media(min-width:1450px){.main-content{padding-top:65px;max-width:1100px}}@media(max-width:960px){.sidebar{width:195px;padding:28px 17px}.main-content{width:calc(100% - 195px);padding:36px 30px}.connection{margin-left:4px;padding:6px 8px;font-size:9px}.task-row{gap:12px;padding-right:0}.task-actions{gap:0}.task-actions .text-button{padding:5px}.composer-options{gap:12px}.page-header h1{font-size:28px}}@media(max-width:700px){.app-shell{display:block}.sidebar{width:100%;height:auto;min-height:0;position:static;padding:18px 20px 12px}.brand{margin:0;float:left}.new-task{width:auto;margin:0 0 12px auto;display:flex;padding:8px 13px}.sidebar nav{display:flex;overflow:auto;clear:both;gap:4px}.nav-group{display:contents}.nav-caption,.date-nav,.sidebar-footer{display:none}.nav-item{white-space:nowrap;width:auto;font-size:11px;padding:7px 11px}.main-content{width:100%;padding:26px 20px}.page-header{margin-bottom:23px}.page-header h1{font-size:26px}.connection{display:none}.composer{padding:14px;border-radius:15px}.composer-options{gap:8px}.composer-bottom .text-button{font-size:10px}.task-row{flex-wrap:wrap;padding-bottom:18px}.task-content{flex-basis:calc(100% - 40px)}.task-actions{margin-left:32px;margin-top:0}.task-row:after{left:32px;right:0}.task-row:before{bottom:18px}.section-heading>div{gap:3px}.modal{padding:20px;width:100%}.modal-backdrop{padding:12px}.field-grid,.form-grid{grid-template-columns:1fr}.toast{left:50%;bottom:18px}.intro-row{align-items:flex-start}.intro-row p{max-width:65%}}
 
-/* 清晰的复盘日期入口。日期切换后仍保留历史页。 */
-.history-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 17px 19px; margin-bottom: 29px; border: 1px solid #e6e6ea; background: #fafafa; border-radius: 14px; }
-.history-toolbar label { display: flex; align-items: center; gap: 14px; color: #73737d; font-size: 13px; }
-.history-toolbar input[type=date] { font-size: 14px; height: 40px; padding: 7px 11px; }
-.history-presets { display: flex; gap: 3px; padding: 3px; border: 1px solid #e7e7eb; background: #f0f0f2; border-radius: 10px; }
-.history-presets button { padding: 5px 16px; font-size: 13px; border-radius: 7px; color: #82828b; }
-.history-presets button:hover { color: #333339; }
-.history-presets button.active { color: #303034; background: #fff; box-shadow: 0 1px 4px #2222260c; }
 .filters select, .modal label select { font-size: 14px; }
-@media (max-width: 700px) { .history-toolbar { padding: 14px; gap: 12px; } .history-toolbar label { gap: 10px; } }
 
 /* 周期计划：沿用每日任务行，按日期分组。 */
 .completion-dialog { width: 530px; }

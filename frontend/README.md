@@ -16,6 +16,8 @@
 | `src/markdown.js` | Markdown 解析和预览清理 | 第三方库调用、预览与原始正文分离 |
 | `src/components/TaskEditor.vue` | 编辑弹窗 | 校验、生命周期、键盘事件 |
 | `src/components/DailyReview.vue` | 复盘输入 | 输入事件、`watch` |
+| `src/components/HistoryPage.vue` | 历史事项与完成情况阅读 | 周日期推导、状态分组、选中事项、只读 / 编辑切换、响应式布局 |
+| `src/history.css` | 历史页样式 | 页面内的 Grid 两栏、日期导航、窄窗口布局 |
 | `src/components/SettingsPanel.vue` | 偏好与备份 | 开关、文件选择、组件事件 |
 | `src/App.vue` | 页面与数据协调 | `ref`、`computed`、异步请求、写操作排队 |
 | `src/api.js` | Java 接口 | `fetch`、异常、同源请求 |

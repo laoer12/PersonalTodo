@@ -1,0 +1,137 @@
+/* 历史页：周日期导航、事项列表和阅读详情。 */
+.main-content.history-main { max-width:1480px; padding:26px 30px 24px; }
+.history-main .page-header { margin-bottom:16px; align-items:center; }
+.history-main .page-header h1 { font-size:30px; line-height:1.3; letter-spacing:-.6px; }
+.history-main .page-header p { font-size:13px; margin-top:5px; }
+.history-main .icon-button { width:39px; height:39px; }
+.history-main .header-actions { gap:9px; padding:0; }
+.history-date-picker { display:inline-flex; align-items:center; justify-content:center; gap:9px; position:relative; border:1px solid #e4e4e7; border-radius:10px; height:39px; padding:0 15px; margin-left:5px; font-size:14px; white-space:nowrap; }
+.history-date-picker input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.history-date-picker:focus-within { outline:2px solid #707078; outline-offset:3px; }
+.history-date-picker:hover { background:#f7f7f8; }
+.history-date-picker:has(input:disabled) { opacity:.5; }
+.history-week { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:12px; }
+.history-day { display:flex; flex-direction:column; justify-content:flex-start; align-items:center; position:relative; min-height:64px; padding:6px 6px 18px; background:#f7f7f8; border-radius:9px; line-height:1.4; gap:4px; }
+.history-day strong { font-size:14px; font-weight:600; }
+.history-day > span { font-size:12px; }
+.history-day > small { position:absolute; bottom:4px; font-size:10px; color:#82828a; padding:0 10px; background:#ededf0; border-radius:12px; }
+.history-day:hover { background:#eeeef0; }
+.history-day.active { background:#232325; color:#fff; }
+.history-day.active small { color:#ededf0; background:#444448; }
+.history-summary { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:10px 0; margin:12px 0 14px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.history-counts { display:flex; align-items:center; gap:20px; flex-wrap:wrap; font-size:14px; color:#797982; }
+.history-counts > span { white-space:nowrap; }
+.history-counts strong { font-size:21px; color:#242426; font-weight:650; margin-right:5px; }
+.history-progress { display:flex; align-items:center; gap:18px; color:#73737c; font-size:14px; flex:1; min-width:100px; }
+.history-progress > span { min-width:34px; text-align:right; }
+.history-progress-track { height:9px; border-radius:12px; background:#ededf0; overflow:hidden; flex:1; }
+.history-progress-track > span { display:block; height:100%; border-radius:12px; background:#232325; transition:width .15s; }
+.history-workspace { display:grid; grid-template-columns:minmax(235px,.4fr) minmax(0,.6fr); min-height:0; }
+.history-list { padding-right:26px; min-width:0; }
+.history-group + .history-group { margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+.history-group-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:0 8px 9px 0; text-align:left; font-size:17px; font-weight:600; }
+.history-group-heading small { margin-left:6px; color:#8c8c95; font-size:15px; font-weight:400; }
+.history-group-heading > svg { color:#8d8d95; flex-shrink:0; }
+.history-task { display:flex; align-items:flex-start; gap:12px; width:100%; padding:6px 10px; border-radius:10px; text-align:left; margin-bottom:4px; }
+.history-task:hover { background:#f9f9fa; }
+.history-task.selected { background:#f3f3f5; }
+.history-state-icon { color:#333337; margin-top:2px; flex-shrink:0; }
+.history-state-icon.open { color:#9b9ba4; }
+.history-task-copy { display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+.history-task-copy strong { font-size:14.5px; font-weight:550; line-height:1.6; overflow-wrap:anywhere; }
+.history-task-copy > span { font-size:12px; color:#909099; }
+.history-task-copy small { color:#93939c; font-size:11px; margin-top:2px; }
+.history-status-tag { background:#f1f1f3; color:#777780; border-radius:6px; padding:3px 8px; font-size:11px; flex-shrink:0; margin-top:2px; }
+.history-list-empty { padding:10px 0 15px; color:#9898a0; font-size:13px; }
+.history-detail { border-left:1px solid var(--line); padding-left:26px; min-width:0; }
+.history-detail-heading { padding:4px 0 15px; border-bottom:1px solid var(--line); }
+.history-detail-heading h2 { font-size:24px; line-height:1.5; font-weight:650; overflow-wrap:anywhere; }
+.history-detail-heading p { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; color:#515158; margin-top:9px; }
+.history-detail-heading p > svg { flex-shrink:0; }
+.history-detail-heading .muted { font-size:13px; margin-left:3px; }
+.history-detail-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:13px; }
+.history-detail-section-heading h3 { font-size:16px; font-weight:600; margin:0; }
+.history-detail-section-heading .secondary { display:inline-flex; gap:5px; padding:7px 12px; font-size:12px; border-radius:8px; background:#fafafa; }
+.history-report { padding:15px 0 18px; }
+.history-report-text,.history-review-text { font-size:14.5px; line-height:1.85; white-space:pre-wrap; overflow-wrap:anywhere; }
+.history-placeholder { color:#92929b; font-size:14px; line-height:1.9; }
+.history-plan-details { border-top:1px solid var(--line); padding:15px 0 22px; font-size:13px; color:#777780; }
+.history-plan-details summary { cursor:pointer; }
+.history-plan-details summary span { margin-left:14px; font-size:12px; color:#9999a1; }
+.history-plan-details p { white-space:pre-wrap; overflow-wrap:anywhere; margin-top:12px; }
+.history-plan-details ul { list-style:none; padding:0; margin:12px 0 0; }
+.history-plan-details li { display:flex; align-items:flex-start; gap:8px; margin:8px 0; overflow-wrap:anywhere; }
+.history-plan-details li svg { flex-shrink:0; margin-top:3px; }
+.history-review { border-top:1px solid var(--line); padding-top:15px; }
+.history-review-text { background:#f8f8f9; border:1px solid #ebebef; border-radius:10px; padding:12px 15px; min-height:64px; }
+.history-review-input { width:100%; font-size:14px; line-height:1.8; padding:10px 13px; border-color:#e5e5ea; background:#fafafa; }
+.history-saving { display:block; color:#92929a; font-size:12px; margin-top:6px; }
+.history-detail-empty { padding:4px 0 15px; }
+.history-detail-empty h2 { font-size:22px; }
+.history-detail-empty p { color:#94949d; font-size:14px; margin-top:9px; }
+.history-mobile-back { display:none; }
+
+@media(max-width:1100px) {
+ .main-content.history-main { padding:32px 25px; }
+ .history-summary { align-items:stretch; flex-direction:column; gap:14px; padding:18px 0; }
+ .history-progress { max-width:none; }
+ .history-list { padding-right:18px; }
+ .history-detail { padding-left:22px; }
+ .history-task { padding:12px 8px; gap:8px; flex-wrap:wrap; }
+ .history-status-tag { margin-left:32px; }
+}
+@media(max-width:850px) {
+ .history-mobile-back { display:flex; align-items:center; gap:6px; margin-bottom:14px; }
+ .history-workspace { grid-template-columns:minmax(0,1fr); min-height:0; }
+ .history-list { padding-right:0; }
+ .history-detail { padding:25px 0 0; border-left:0; border-top:1px solid var(--line); margin-top:20px; }
+ .history-group + .history-group { margin-top:16px; padding-top:18px; }
+ .history-status-tag { margin-left:0; }
+ .history-task { flex-wrap:nowrap; }
+}
+@media(max-width:700px) {
+ .main-content.history-main { width:100%; padding:24px 18px 35px; }
+ .history-main .page-header { flex-wrap:wrap; gap:15px; }
+ .history-main .page-header h1 { font-size:28px; }
+ .history-main .page-header p { font-size:12px; }
+ .history-main .header-actions { width:100%; justify-content:flex-end; }
+ .history-week { gap:5px; }
+ .history-day { min-height:64px; padding:8px 1px 18px; }
+ .history-day strong { font-size:12px; }
+ .history-day > span { font-size:11px; }
+ .history-day > small { font-size:9px; padding:0 6px; }
+ .history-summary { margin:19px 0 21px; }
+ .history-counts { gap:9px 13px; font-size:12px; }
+ .history-counts strong { font-size:20px; margin-right:2px; }
+ .history-group-heading { font-size:17px; }
+ .history-detail-heading h2 { font-size:24px; }
+ .history-detail-section-heading h3 { font-size:17px; }
+}
+
+/* 常用桌面高度内保留导航和复盘，长正文在正文区域滚动。 */
+@media(min-width:851px) and (min-height:600px) {
+ .app-shell:has(.history-main) { height:100dvh; overflow:hidden; }
+ .app-shell:has(.history-main) .sidebar { height:100dvh; overflow-y:auto; padding-top:20px; padding-bottom:16px; }
+ .app-shell:has(.history-main) .brand { margin-bottom:16px; }
+ .app-shell:has(.history-main) .new-task { margin-bottom:16px; }
+ .app-shell:has(.history-main) .nav-group { margin-bottom:8px; }
+ .app-shell:has(.history-main) .nav-caption { margin-bottom:4px; }
+ .app-shell:has(.history-main) .nav-item, .app-shell:has(.history-main) .date-nav { padding-top:5px; padding-bottom:5px; }
+ .app-shell:has(.history-main) .sidebar-footer { padding-top:12px; }
+ .main-content.history-main { height:100dvh; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+ .history-main > .page-header, .history-main > .error-banner { flex-shrink:0; }
+ .history-page { display:flex; flex-direction:column; flex:1; min-height:0; }
+ .history-week, .history-summary { flex-shrink:0; }
+ .history-workspace { flex:1; min-height:0; }
+ .history-list { overflow-y:auto; scrollbar-gutter:stable; }
+ .history-detail { display:flex; flex-direction:column; min-height:0; overflow-y:auto; }
+ .history-detail-heading, .history-detail-empty, .history-review { flex-shrink:0; }
+ .history-detail-heading h2 { max-height:68px; overflow-y:auto; }
+ .history-report { display:flex; flex-direction:column; flex:1; min-height:88px; overflow:hidden; }
+ .history-report .history-detail-section-heading { flex-shrink:0; }
+ .history-report-text { overflow-y:auto; scrollbar-gutter:stable; min-height:0; }
+ .history-review-text { max-height:100px; overflow-y:auto; }
+ .history-review-input { height:105px; min-height:75px; max-height:145px; }
+ .history-plan-details { flex:0 0 auto; max-height:115px; overflow-y:auto; padding:10px 0 14px; }
+}
+.history-report-text:focus-visible { outline:2px solid #707078; outline-offset:2px; }

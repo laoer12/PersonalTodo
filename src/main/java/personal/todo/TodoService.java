@@ -24,6 +24,8 @@ final class TodoService {
         result.put("data", Json.parse(Store.encode(data))); result.put("revision", revision);
         result.put("today", LocalDate.now().toString()); result.put("date", date.toString());
         result.put("dayTasks", Model.forDay(data, date).stream().map(t -> t.id).toList());
+        // Recorded occurrences remain visible in history after a recurrence/start-date edit.
+        result.put("historyDayTasks", data.tasks.stream().filter(t -> Model.occurs(t, date) || t.done.contains(date) || t.deferred.contains(date) || t.completionReports.containsKey(date)).map(t -> t.id).toList());
         if (from != null) {
             List<Object> days = new ArrayList<>();
             for (LocalDate day = from; !day.isAfter(to); day = day.plusDays(1))
@@ -74,6 +76,15 @@ final class TodoService {
                     if (report.isEmpty()) task.completionReports.remove(date); else task.completionReports.put(date, report);
                 }
                 Model.mark(task.done, date, value); if (value) task.steps.forEach(s -> s.done.add(date));
+            }
+            case "task.report" -> {
+                Model.Task task = Model.find(next, text(request, "id", 100)); LocalDate date = date(request);
+                Map<String, Object> expected = object(request.get("expectedCompletion"));
+                if (!task.done.contains(date) || !flag(expected, "done", false) || !task.completionReports.getOrDefault(date, "").equals(text(expected, "report", 10000)))
+                    throw new Conflict("这项任务当天的完成记录已在其他窗口更新。输入内容仍保留，请核对后重新打开完成弹窗。");
+                String report = text(request, "completionReport", 10000).strip();
+                if (report.isEmpty()) task.completionReports.remove(date); else task.completionReports.put(date, report);
+                // Editing prose must not toggle completion, steps, deferrals or reminder state.
             }
             case "task.step" -> {
                 Model.Task task = Model.find(next, text(request, "id", 100)); LocalDate date = date(request); requireOccurrence(task, date);

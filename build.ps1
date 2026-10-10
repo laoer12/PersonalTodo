@@ -4,7 +4,7 @@ param(
     [switch]$SkipTests,
     [string]$PackageDirectory = (Join-Path $PSScriptRoot 'release'),
     [string]$JdkDirectory = '',
-    [string]$Version = '2.1.0'
+    [string]$Version = '2.2.1'
 )
 $ErrorActionPreference = 'Stop'
 $todoRoot = $PSScriptRoot
@@ -73,6 +73,8 @@ if ($Package) {
     & (Join-Path $todoJdk 'bin\jpackage.exe') $todoPackageArguments
     if ($LASTEXITCODE -ne 0) { throw 'Portable packaging failed.' }
     Copy-Item -LiteralPath (Join-Path $todoRoot 'README.md') -Destination (Join-Path $todoImage 'README.md')
+    New-Item -ItemType Directory -Path (Join-Path $todoImage 'docs') -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $todoRoot 'docs\images') -Destination (Join-Path $todoImage 'docs\images') -Recurse
     foreach ($todoLicense in @('LICENSE','THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $todoRoot $todoLicense) -Destination $todoImage }
     Copy-Item -LiteralPath (Join-Path $todoRoot 'docs\licenses') -Destination (Join-Path $todoImage 'licenses') -Recurse
     New-Item -ItemType Directory -Path (Join-Path $todoImage 'runtime\tmp'),(Join-Path $todoImage 'runtime\logs') -Force | Out-Null

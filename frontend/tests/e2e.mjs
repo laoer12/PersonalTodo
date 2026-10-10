@@ -216,7 +216,7 @@ try {
   const preserved = (await state()).data
   await page.getByRole('button', { name: '历史与复盘', exact: true }).click()
   await page.getByRole('heading', { name: '历史与复盘', exact: true }).waitFor()
-  await page.getByLabel('一句话复盘', { exact: true }).waitFor(); pass('history view opens with dated review')
+  await page.getByRole('heading', { name: '当日复盘', exact: true }).waitFor(); pass('history view opens with dated review')
   await page.getByRole('button', { name: '全部计划', exact: true }).click()
   await page.getByRole('heading', { name: '全部计划', exact: true }).waitFor()
   assert.equal(await page.locator('.task-row').count(), 3); pass('all plans includes deferred and recurring plans')

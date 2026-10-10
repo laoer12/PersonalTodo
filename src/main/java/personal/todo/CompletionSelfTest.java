@@ -42,6 +42,26 @@ final class CompletionSelfTest {
             saved = store.load().tasks.getFirst(); check(Model.copyPlan(saved).completionReports.isEmpty(), "new templates and deferred copies do not inherit old completion reports");
             Path backup = folder.resolve("export.json"); store.export(service.copy(), backup);
             check(store.read(backup).tasks.getFirst().completionReports.equals(saved.completionReports), "completion reports included in backup round trip");
+            Map<String, Object> edit = new HashMap<>();
+            edit.put("type", "task.report"); edit.put("id", task.id); edit.put("date", today.toString());
+            edit.put("revision", service.state(today).get("revision")); edit.put("expectedCompletion", Map.of("done", true, "report", "")); edit.put("completionReport", "补充当日成果");
+            String statuses = saved.done + "/" + saved.deferred + "/" + saved.notified + "/" + saved.steps.getFirst().done;
+            service.action(edit); saved = store.load().tasks.getFirst();
+            check(saved.completionReports.get(today).equals("补充当日成果") && statuses.equals(saved.done + "/" + saved.deferred + "/" + saved.notified + "/" + saved.steps.getFirst().done), "report-only edit preserves completion, subtask and reminder states");
+            before = Files.readAllBytes(store.file);
+            edit.put("revision", service.state(today).get("revision"));
+            try { service.action(edit); throw new AssertionError("stale report edit accepted"); }
+            catch (TodoService.Conflict expected) { check(Arrays.equals(before, Files.readAllBytes(store.file)), "report-only edit rejects changed report without touching disk"); }
+            edit.put("date", today.plusDays(2).toString()); edit.put("expectedCompletion", Map.of("done", false, "report", ""));
+            try { service.action(edit); throw new AssertionError("open occurrence report edit accepted"); }
+            catch (TodoService.Conflict expected) { check(!service.copy().tasks.getFirst().done.contains(today.plusDays(2)) && Arrays.equals(before, Files.readAllBytes(store.file)), "report-only edit cannot complete an open occurrence"); }
+            Model.Data editedPlan = service.copy(); editedPlan.tasks.getFirst().start = today.plusDays(3);
+            TodoService historyService = new TodoService(store, editedPlan);
+            var historical = historyService.state(today);
+            check(((List<?>)historical.get("dayTasks")).isEmpty() && ((List<?>)historical.get("historyDayTasks")).contains(task.id), "history keeps recorded date when edited start no longer occurs");
+            edit.put("revision", historical.get("revision")); edit.put("date", today.toString()); edit.put("expectedCompletion", Map.of("done", true, "report", "补充当日成果")); edit.put("completionReport", "旧日记录仍可编辑");
+            historyService.action(edit);
+            check(historyService.copy().tasks.getFirst().completionReports.get(today).equals("旧日记录仍可编辑"), "recorded historical report remains editable outside current recurrence");
         } finally {
             store.release(); try (var paths = Files.walk(folder)) { for (Path p : paths.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p); }
         }

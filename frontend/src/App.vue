@@ -10,6 +10,9 @@ import SettingsPanel from './components/SettingsPanel.vue'
 import PeriodPlan from './components/PeriodPlan.vue'
 import MemoPage from './components/MemoPage.vue'
 import CompletionDialog from './components/CompletionDialog.vue'
+import HistoryPage from './components/HistoryPage.vue'
+import { IconChevronLeft, IconChevronRight, IconCalendar } from '@tabler/icons-vue'
+import './history.css'
 
 // ref 保存页面状态，computed 从状态推导列表。真正的数据保存由 Java 完成。
 const today = ref(localDate()), date = ref(today.value), view = ref('today')
@@ -53,7 +56,7 @@ async function load() {
   const result = await request(`state?${query}`)
   if (sequence !== readSequence || selected !== date.value || scope !== `${view.value}/${periodFrom.value}/${periodTo.value}`) return
   data.value = result.data; revision.value = result.revision; today.value = result.today
-  dayIds.value = result.dayTasks; paths.value = result.paths; startup.value = result.startup; startupAvailable.value = result.startupAvailable
+  dayIds.value = view.value === 'history' ? (result.historyDayTasks || result.dayTasks) : result.dayTasks; paths.value = result.paths; startup.value = result.startup; startupAvailable.value = result.startupAvailable
   if (result.range) periodDays.value = result.range.days
   if (!noteDirty.value) { note.value = data.value.notes[selected] || ''; noteBase.value = note.value }
   connected.value = true; loading.value = false
@@ -145,8 +148,18 @@ function complete(task, value, selected = date.value) {
 async function saveCompletion(text) {
   if (!completion.value || busy.value) return
   const current = completion.value; completionError.value = ''
-  if (await action({ type: 'task.complete', id: current.task.id, date: current.date, value: true, completionReport: text, expectedCompletion: current.expected }, { quiet: true })) completion.value = null
+  if (await action({ type: current.mode === 'report' ? 'task.report' : 'task.complete', id: current.task.id, date: current.date, value: true, completionReport: text, expectedCompletion: current.expected }, { quiet: true })) completion.value = null
   else completionError.value = error.value
+}
+function editCompletionReport(task) {
+  if (busy.value || completion.value) return
+  completionError.value = ''
+  completion.value = { mode: 'report', task: { id: task.id, title: task.title }, date: date.value, initial: task.completionReports?.[date.value] || '', expected: { done: task.done.includes(date.value), report: task.completionReports?.[date.value] || '' } }
+}
+async function finishReview(closeEditor) {
+  if (busy.value) return
+  busy.value = true; error.value = ''
+  try { await flushNote(); closeEditor() } catch (e) { fail(e) } finally { busy.value = false }
 }
 function step(task, index, value, selected = date.value) { action({ type: 'task.step', id: task.id, index, date: selected, value }, { quiet: true }) }
 function remove(task) {
@@ -199,9 +212,9 @@ onUnmounted(() => { clearInterval(refreshTimer); clearInterval(heartbeatTimer); 
   <div v-if="exited" class="exit-screen"><img src="/icon.svg" alt="" /><h1>已完全退出</h1><p>后台提醒已停止，下次双击程序即可打开。</p></div>
   <div v-else class="app-shell" :aria-busy="busy">
     <Sidebar :view="view" :selected="date" :busy="interactionLocked" @navigate="navigate" @date="chooseDate" @new="newTask()" @folder="native('folder', { name: $event })" @exit="exit" />
-    <main :class="['main-content', { 'memo-main': view === 'memos' }]">
+    <main :class="['main-content', { 'memo-main': view === 'memos', 'history-main': view === 'history' }]">
       <header v-if="view !== 'memos'" class="page-header"><div><h1>{{ titles[view] }}</h1><p>{{ view === 'week' ? `${periodFrom} — ${periodTo}` : dated ? dateText : view === 'plans' ? '为重要的事，留出位置。' : view === 'templates' ? '把熟悉的节奏，轻松带入每一天。' : '让计划按照你的习惯运行。' }}</p></div>
-        <div class="header-actions"><template v-if="dated"><button class="icon-button" aria-label="前一天" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, -1))">‹</button><button class="icon-button" aria-label="后一天" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, 1))">›</button></template><span :class="['connection', { offline: !connected }]">●&nbsp; {{ connected ? '本地提醒已就绪' : '连接已断开' }}</span></div>
+        <div class="header-actions"><template v-if="view === 'history'"><button class="icon-button" aria-label="上一周复盘" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, -7))"><IconChevronLeft :size="19" /></button><button class="icon-button" aria-label="下一周复盘" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, 7))"><IconChevronRight :size="19" /></button><label class="history-date-picker"><IconCalendar :size="18" /><span>选择日期</span><input type="date" aria-label="复盘日期" :value="date" :disabled="interactionLocked" @change="chooseDate($event.target.value)" /></label></template><template v-else-if="dated"><button class="icon-button" aria-label="前一天" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, -1))">‹</button><button class="icon-button" aria-label="后一天" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, 1))">›</button></template><span v-if="view !== 'history' || !connected" :class="['connection', { offline: !connected }]">●&nbsp; {{ connected ? '本地提醒已就绪' : '连接已断开' }}</span></div>
       </header>
       <div v-if="error" class="error-banner" role="alert">{{ error }}<button class="text-button" @click="refresh">重试连接</button><button class="text-button" @click="error = ''">关闭</button></div>
       <div v-if="loading" class="empty-state">正在读取本地计划…</div>
@@ -209,12 +222,9 @@ onUnmounted(() => { clearInterval(refreshTimer); clearInterval(heartbeatTimer); 
         <MemoPage v-if="view === 'memos'" ref="memoPage" @notify="notify" />
         <SettingsPanel v-else-if="view === 'settings'" :settings="data.settings" :paths="paths" :startup="startup" :startup-available="startupAvailable" :busy="busy" @settings="action({ type: 'settings.save', ...$event })" @startup="native('startup', { enabled: $event })" @reminder="native('reminder')" @export="action({ type: 'backup.export' })" @import="importFile" @folder="native('folder', { name: $event })" />
         <PeriodPlan v-else-if="view === 'week'" :from="periodFrom" :to="periodTo" :today="today" :days="rangeDays" :busy="interactionLocked" @range="changePeriod" @complete="complete" @step="step" @edit="edit" @delete="remove" @defer="defer" @template="action({ type: 'template.create', id: $event.id })" @new="newTask(false, $event)" @date="chooseDate" />
+        <HistoryPage v-else-if="view === 'history'" :tasks="dailyTasks" :date="date" :today="today" :busy="interactionLocked" :note="note" :saving="saving" :note-dirty="noteDirty" @date="chooseDate" @note="changeNote" @report="editCompletionReport" @finish-review="finishReview" />
         <template v-else>
           <TaskComposer v-if="dated && view !== 'history'" :date="date" :busy="busy" :reset-key="composerKey" @add="addTask" @templates="chosen = []; picker = true" />
-          <div v-if="view === 'history'" class="history-toolbar">
-            <label>复盘日期<input type="date" aria-label="复盘日期" :value="date" :disabled="interactionLocked" @change="chooseDate($event.target.value)" /></label>
-            <div class="history-presets"><button :class="{ active: date === shiftDate(today, -1) }" :disabled="interactionLocked" @click="chooseDate(shiftDate(today, -1))">昨天</button><button :class="{ active: date === today }" :disabled="interactionLocked" @click="chooseDate(today)">今天</button></div>
-          </div>
           <div v-if="view === 'templates'" class="intro-row"><p class="muted">模板可包含提醒、分类和子任务，套用时生成单次计划。</p><button class="primary" @click="newTask(true)">＋ 新建模板</button></div>
           <section class="task-section">
             <div class="section-heading"><h2>{{ view === 'templates' ? '我的模板' : view === 'history' ? '当日事项' : dated ? '待办' : '所有计划' }}</h2><div><span v-if="dated" class="muted">{{ finished }} / {{ dailyTasks.length }} 已完成</span><span v-else class="muted">{{ tasks.length }} 项</span><button class="text-button" @click="showFilters = !showFilters">{{ showFilters ? '收起筛选' : '筛选' }}</button></div></div>
@@ -227,8 +237,8 @@ onUnmounted(() => { clearInterval(refreshTimer); clearInterval(heartbeatTimer); 
         </template>
       </template>
     </main>
-    <TaskEditor v-if="editor" :task="editor" :template="templateEditor" :busy="busy" @save="saveTask" @cancel="editor = null" />
-    <CompletionDialog v-if="completion" :task="completion.task" :date="completion.date" :initial="completion.initial" :busy="busy" :error="completionError" @save="saveCompletion" @cancel="completion = null" />
+    <TaskEditor v-if="editor" :task="editor" :categories="categories" :template="templateEditor" :busy="busy" @save="saveTask" @cancel="editor = null" />
+    <CompletionDialog v-if="completion" :task="completion.task" :date="completion.date" :initial="completion.initial" :mode="completion.mode" :busy="busy" :error="completionError" @save="saveCompletion" @cancel="completion = null" />
     <div v-if="picker" class="modal-backdrop" @click.self="picker = false"><section class="modal template-picker" role="dialog" aria-modal="true" aria-labelledby="picker-title"><div class="modal-heading"><h2 id="picker-title">套用每日模板</h2><button class="icon-button" aria-label="关闭模板选择" @click="picker = false">×</button></div><p class="muted">添加到 {{ date }}，当天已有的同名同分类任务会跳过。</p><label v-for="task in data.templates" :key="task.id" class="template-option"><input v-model="chosen" type="checkbox" :value="task.id" />{{ task.title }}<small>{{ task.category }}</small></label><p v-if="!data.templates.length" class="empty-state">还没有模板。可在任务的“更多”菜单中保存。</p><div class="modal-footer"><button class="secondary" @click="picker = false">取消</button><button class="primary" :disabled="busy || !chosen.length" @click="applySelected">添加到当天</button></div></section></div>
     <div v-if="toast" class="toast" role="status">{{ toast }}</div>
   </div>
