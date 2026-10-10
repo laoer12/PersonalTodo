@@ -76,6 +76,16 @@ if ($Package) {
     foreach ($todoLicense in @('LICENSE','THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $todoRoot $todoLicense) -Destination $todoImage }
     Copy-Item -LiteralPath (Join-Path $todoRoot 'docs\licenses') -Destination (Join-Path $todoImage 'licenses') -Recurse
     New-Item -ItemType Directory -Path (Join-Path $todoImage 'runtime\tmp'),(Join-Path $todoImage 'runtime\logs') -Force | Out-Null
+    $todoJdkRelease = Get-Content -LiteralPath (Join-Path $todoJdk 'release') -Raw
+    $todoRuntimeVersion = [regex]::Match($todoJdkRelease, '(?m)^JAVA_RUNTIME_VERSION="([^"]+)"').Groups[1].Value
+    $todoRuntimeVendor = [regex]::Match($todoJdkRelease, '(?m)^IMPLEMENTOR="([^"]+)"').Groups[1].Value
+    $todoRuntimeNotice = @('# Bundled Java runtime', '', ('Vendor: ' + $todoRuntimeVendor), ('Version: ' + $todoRuntimeVersion), '', 'The original runtime legal notices are retained in runtime/legal. They have their own terms and are not replaced by the application MIT license.')
+    if ($todoRuntimeVendor -eq 'Eclipse Adoptium') {
+        $todoTemurinVersion = [regex]::Match($todoJdkRelease, '(?m)^IMPLEMENTOR_VERSION="Temurin-([^"]+)"').Groups[1].Value
+        $todoTemurinTag = [Uri]::EscapeDataString('jdk-' + $todoTemurinVersion)
+        $todoRuntimeNotice += @('', 'License: GPLv2 with Classpath Exception and the additional component notices in runtime/legal.', ('Exact binary and corresponding source release: https://github.com/adoptium/temurin21-binaries/releases/tag/' + $todoTemurinTag), 'OpenJDK source repository: https://github.com/adoptium/jdk21u')
+    }
+    $todoRuntimeNotice | Set-Content -LiteralPath (Join-Path $todoImage 'JAVA_RUNTIME_NOTICE.md') -Encoding UTF8
     if (Test-Path -LiteralPath (Join-Path $todoRoot 'TESTING.md')) {
         Copy-Item -LiteralPath (Join-Path $todoRoot 'TESTING.md') -Destination (Join-Path $todoImage 'TESTING.md')
     }
