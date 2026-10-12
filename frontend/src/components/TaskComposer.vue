@@ -1,17 +1,22 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
 import SelectField from './SelectField.vue'
+import WeekdayPicker from './WeekdayPicker.vue'
+import { weekdayOf } from '../api'
 const props = defineProps({ busy: Boolean, resetKey: Number, date: String })
 const emit = defineEmits(['add', 'templates'])
 const form = reactive({ title: '', remind: false, time: '09:00', repeat: 'once', priority: 0 })
 const stepLines = ref(''), showSteps = ref(false)
+const weekDays = ref([weekdayOf(props.date)]), weekDaysTouched = ref(false)
+function chooseWeekDays(value) { weekDays.value = value; weekDaysTouched.value = true }
+watch(() => props.date, value => { if (!weekDaysTouched.value) weekDays.value = [weekdayOf(value)] })
 const repeatOptions = [{ value: 'once', label: '单次' }, { value: 'daily', label: '每天' }, { value: 'weekdays', label: '工作日' }, { value: 'weekly', label: '每周' }, { value: 'monthly', label: '每月' }]
 const priorityOptions = [{ value: 0, label: '无' }, { value: 1, label: '低' }, { value: 2, label: '中' }, { value: 3, label: '高' }]
-watch(() => props.resetKey, () => { form.title = ''; form.remind = false; form.repeat = 'once'; form.priority = 0; stepLines.value = ''; showSteps.value = false })
+watch(() => props.resetKey, () => { form.title = ''; form.remind = false; form.repeat = 'once'; form.priority = 0; stepLines.value = ''; showSteps.value = false; weekDaysTouched.value = false; weekDays.value = [weekdayOf(props.date)] })
 function submit() {
-  if (!form.title.trim()) return
+  if (!form.title.trim() || (form.repeat === 'weekly' && !weekDays.value.length)) return
   emit('add', { title: form.title.trim(), start: props.date, repeat: form.repeat, priority: form.priority, time: form.remind ? form.time : null,
-    category: '生活', notes: '', steps: stepLines.value.split('\n').map(s => s.trim()).filter(Boolean) })
+    weekDays: form.repeat === 'weekly' ? [...weekDays.value] : [], category: '生活', notes: '', steps: stepLines.value.split('\n').map(s => s.trim()).filter(Boolean) })
 }
 </script>
 
@@ -24,10 +29,11 @@ function submit() {
       <div class="composer-field"><span>重复</span><SelectField v-model="form.repeat" label="重复规则" :options="repeatOptions" :disabled="busy" /></div>
       <div class="composer-field"><span>优先级</span><SelectField v-model="form.priority" label="优先级" :options="priorityOptions" :disabled="busy" /></div>
     </div>
+    <WeekdayPicker v-if="form.repeat === 'weekly'" :model-value="weekDays" :disabled="busy" @update:model-value="chooseWeekDays" />
     <textarea v-if="showSteps" v-model="stepLines" class="composer-steps" aria-label="新增子任务" placeholder="子任务，每行一项" rows="3" :disabled="busy" />
     <div class="composer-bottom">
       <button class="secondary" type="button" :disabled="busy" @click="showSteps = !showSteps">子任务 · {{ stepLines.split('\n').filter(s => s.trim()).length }}</button>
-      <div><button class="text-button" type="button" :disabled="busy" @click="$emit('templates')">套用模板</button><button class="primary" type="submit" :disabled="busy || !form.title.trim()">添加</button></div>
+      <div><button class="text-button" type="button" :disabled="busy" @click="$emit('templates')">套用模板</button><button class="primary" type="submit" :disabled="busy || !form.title.trim() || (form.repeat === 'weekly' && !weekDays.length)">添加</button></div>
     </div>
   </form>
 </template>

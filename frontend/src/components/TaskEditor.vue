@@ -2,6 +2,8 @@
 import { reactive, computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { IconX } from '@tabler/icons-vue'
 import SelectField from './SelectField.vue'
+import WeekdayPicker from './WeekdayPicker.vue'
+import { selectedWeekDays, weekdayOf } from '../api'
 const props = defineProps({ task: Object, date: String, template: Boolean, busy: Boolean, categories: { type: Array, default: () => [] } })
 const emit = defineEmits(['save', 'cancel'])
 const firstInput = ref(null)
@@ -9,6 +11,9 @@ const form = reactive({ id: props.task?.id, title: props.task?.title || '', star
   category: props.task?.category || '生活', priority: props.task?.priority || 0, repeat: props.task?.repeat || 'once',
   remind: !!props.task?.time, time: props.task?.time || '09:00', notes: props.task?.notes || '', steps: (props.task?.steps || []).map(s => s.title).join('\n') })
 const heading = computed(() => `${props.task?.id ? '编辑' : '新建'}${props.template ? '模板' : '待办'}`)
+const weekDays = ref(selectedWeekDays({ ...props.task, start: form.start })), weekDaysTouched = ref(props.task?.repeat === 'weekly')
+watch(() => form.start, value => { if (!weekDaysTouched.value) weekDays.value = [weekdayOf(value)] })
+function chooseWeekDays(value) { weekDays.value = value; weekDaysTouched.value = true }
 const categoryChoice = ref(form.category), customCategory = ref(null)
 const categoryOptions = computed(() => [...new Set(['生活', '学习', '工作', '健康', '个人', ...props.categories, props.task?.category].filter(Boolean))].map(value => ({ value, label: value })).concat({ value: '', label: '自定义分类…' }))
 watch(categoryChoice, async value => {
@@ -16,10 +21,11 @@ watch(categoryChoice, async value => {
   if (!value) { await nextTick(); customCategory.value?.focus() }
 })
 function submit() {
+  if (!props.template && form.repeat === 'weekly' && !weekDays.value.length) return
   const steps = form.steps.split('\n').map(s => s.trim()).filter(Boolean)
   if (steps.length > 50 || steps.some(s => s.length > 200)) { alert('最多 50 个子任务，每项最多 200 字。'); return }
   emit('save', { id: form.id, title: form.title.trim(), start: form.start, category: form.category.trim() || '生活', priority: form.priority,
-    repeat: props.template ? 'once' : form.repeat, time: form.remind ? form.time : null, notes: form.notes, steps })
+    repeat: props.template ? 'once' : form.repeat, weekDays: !props.template && form.repeat === 'weekly' ? [...weekDays.value] : [], time: form.remind ? form.time : null, notes: form.notes, steps })
 }
 function escape(e) { if (e.key === 'Escape' && !e.defaultPrevented && !e.isComposing && !props.busy) emit('cancel') }
 onMounted(() => { firstInput.value.focus(); window.addEventListener('keydown', escape) })
@@ -36,13 +42,14 @@ onUnmounted(() => window.removeEventListener('keydown', escape))
           <div class="form-field category-field"><span>分类</span><SelectField v-model="categoryChoice" label="分类" :options="categoryOptions" :disabled="busy" /><input v-if="categoryChoice === ''" ref="customCategory" v-model="form.category" aria-label="自定义分类" maxlength="40" :disabled="busy" required placeholder="输入分类名称" /></div>
           <label class="form-field">优先级<select v-model.number="form.priority" :disabled="busy"><option :value="0">普通</option><option :value="1">低优先级</option><option :value="2">中优先级</option><option :value="3">高优先级</option></select></label>
           <label class="form-field">开始日期<input v-model="form.start" type="date" required :disabled="template || busy" /></label>
-          <label class="form-field">重复规则<select v-model="form.repeat" :disabled="template || busy"><option value="once">仅此一天</option><option value="daily">每天</option><option value="weekdays">工作日</option><option value="weekly">每周</option><option value="monthly">每月</option></select></label>
+          <label class="form-field">重复规则<select v-model="form.repeat" aria-label="重复规则" :disabled="template || busy"><option value="once">仅此一天</option><option value="daily">每天</option><option value="weekdays">工作日</option><option value="weekly">每周</option><option value="monthly">每月</option></select></label>
         </div>
+        <WeekdayPicker v-if="!template && form.repeat === 'weekly'" :model-value="weekDays" :disabled="busy" @update:model-value="chooseWeekDays" />
         <div class="editor-reminder"><label class="inline-check"><input v-model="form.remind" type="checkbox" :disabled="busy" />到点提醒</label><input v-model="form.time" type="time" aria-label="待办提醒时间" :disabled="!form.remind || busy" :required="form.remind" /></div>
         <div class="task-editor-secondary-fields"><label class="form-field">子任务 · 每行一项<textarea v-model="form.steps" aria-label="编辑子任务" rows="3" :disabled="busy" placeholder="可选，每行填写一个子任务" /></label>
         <label class="form-field">备注<textarea v-model="form.notes" rows="3" maxlength="10000" :disabled="busy" placeholder="可选，补充计划说明" /></label></div>
         <p v-if="task?.id && !template" class="field-tip">修改日期或重复规则会影响整个计划，已有完成记录会保留。</p>
-        <div class="modal-actions"><button class="secondary" type="button" :disabled="busy" @click="$emit('cancel')">取消</button><button class="primary" type="submit" :disabled="busy || !form.title.trim()">保存{{ template ? '模板' : '待办' }}</button></div>
+        <div class="modal-actions"><button class="secondary" type="button" :disabled="busy" @click="$emit('cancel')">取消</button><button class="primary" type="submit" :disabled="busy || !form.title.trim() || (!template && form.repeat === 'weekly' && !weekDays.length)">保存{{ template ? '模板' : '待办' }}</button></div>
       </form>
     </section>
   </div>
@@ -67,6 +74,14 @@ onUnmounted(() => window.removeEventListener('keydown', escape))
 .task-editor .editor-reminder input[type=time] { width: 132px; flex: 0 0 132px; height: 40px; padding: 7px 11px; font-size: 14px; }
 .task-editor .editor-reminder input[type=time]:disabled { background: #fff; opacity: .55; }
 .task-editor .modal-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid #ededf0; }
+@media(min-width:701px) {
+ .task-editor:has(.weekday-picker) { padding-top: 16px; padding-bottom: 16px; }
+ .task-editor:has(.weekday-picker) .task-editor-heading { margin-bottom: 10px; }
+ .task-editor:has(.weekday-picker) .form-field { margin-top: 6px; margin-bottom: 6px; }
+ .task-editor:has(.weekday-picker) .form-grid .form-field { margin-top: 0; margin-bottom: 9px; }
+ .task-editor:has(.weekday-picker) .form-field textarea { height: 72px; }
+ .task-editor:has(.weekday-picker) .modal-actions { margin-top: 12px; padding-top: 12px; }
+}
 @media(max-width:700px) {
  .task-editor { padding: 20px; }
  .task-editor .form-grid, .task-editor-secondary-fields { grid-template-columns: minmax(0, 1fr); }

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { repeatLabel } from '../api'
 const props = defineProps({ task: Object, date: String, dated: Boolean, template: Boolean, busy: Boolean, confirmComplete: Boolean })
 const emit = defineEmits(['complete', 'step', 'edit', 'delete', 'defer', 'template', 'apply'])
 const expanded = ref(false)
@@ -12,7 +13,6 @@ function changeCompletion(event) {
 }
 const done = computed(() => props.dated && props.task.done.includes(props.date))
 const deferred = computed(() => props.dated && props.task.deferred.includes(props.date))
-const repeats = { once: '单次', daily: '每天', weekdays: '工作日', weekly: '每周', monthly: '每月' }
 const priorities = ['普通', '低优先级', '中优先级', '高优先级']
 const completedSteps = computed(() => props.task.steps.filter(s => s.done.includes(props.date)).length)
 function menu(event, type) { event.target.closest('details').open = false; emit(type, props.task) }
@@ -24,7 +24,7 @@ function menu(event, type) { event.target.closest('details').open = false; emit(
     <div class="task-content">
       <div class="task-title">{{ task.title }}</div>
       <div class="task-meta">
-        <span v-if="task.time">{{ task.time }}</span><span>{{ template ? '每日模板' : repeats[task.repeat] }}</span><span>{{ priorities[task.priority] }}</span><span>{{ task.category }}</span>
+        <span v-if="task.time">{{ task.time }}</span><span>{{ template ? '每日模板' : repeatLabel(task) }}</span><span>{{ priorities[task.priority] }}</span><span>{{ task.category }}</span>
         <span v-if="!dated && !template">{{ task.start }}</span>
         <span v-if="task.steps.length">子任务 {{ dated ? `${completedSteps}/` : '' }}{{ task.steps.length }}</span>
         <span v-if="done">已完成</span><span v-if="deferred">已顺延</span>

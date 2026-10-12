@@ -8,6 +8,7 @@
 | 原生桌面 | build.ps1 / JAR --web-integration-test | 系统托盘、提醒调度、浮窗、去重和退出 |
 | 待办 / HTTP | npm.cmd run test:e2e | 认证、任务、周期、子任务、模板、复盘、备份、重启和关闭 |
 | 历史与菜单 | npm.cmd run test:history-ui | 周日期与任意日期、状态统计、历史情况补充 / 修改、失败重试、多窗口冲突、只读 / 编辑、切换保存与窄窗口 |
+| 指定星期 | npm.cmd run test:weekly-ui | 星期默认值 / 多选、校验、编辑确认、历史保留、快捷添加、首次日期、窄窗口、重启 |
 | 备忘录 | npm.cmd run test:memos | Markdown、失败、冲突、回收站、导出、组合输入和重启 |
 | 完成情况 | npm.cmd run test:completion | 弹窗、取消、原子保存、日期隔离、重试和备份 |
 
@@ -18,6 +19,7 @@ Playwright 驱动本机 Edge，不下载额外浏览器。PERSONAL_TODO_BROWSER 
 Set-Location frontend
 npm.cmd run test:e2e
 npm.cmd run test:history-ui
+npm.cmd run test:weekly-ui
 npm.cmd run test:memos
 npm.cmd run test:completion
 ```
@@ -47,3 +49,11 @@ Windows x64 便携版使用 Temurin 21.0.12.1+1；从实际 ZIP 解压到另一�
 新增覆盖 1104 × 694 窗口下的日期栏、事项列表、侧栏与复盘入口，45 行完成情况在正文区域内滚动，新建待办提醒标签 / 复选框 / 时间不重叠，预设与自定义分类保存及再次选择，以及 390px 窄窗口编辑。所有数据与浏览器配置均使用 D 盘隔离目录，未使用真实个人数据。
 
 截图：build/history-compact-desktop.png、build/history-long-report-compact.png、build/task-editor-compact.png、build/task-editor-categories.png、build/task-editor-mobile.png。
+
+## 2.3.0 每周指定星期验证（2026-10-12，本机）
+
+共 225 项检查：130 项 Java 核心、9 项原生桌面、41 项待办 / HTTP、30 项历史与编辑器、15 项指定星期界面检查。指定星期套件另用便携版自带运行环境重复验证，不重复计数。
+
+新增 31 项核心检查覆盖单日 / 多日循环、开始 / 结束边界、提醒与去重、旧版数据读取、无效输入不落盘、备份与重启、星期修改保留旧记录、并发编辑冲突、顺延及模板。数据格式仍为 JSON v1，weekDays 为新增可选字段；旧数据按开始日期的星期读取，无需手动迁移。
+
+界面覆盖新建、编辑、快捷添加、至少选一天、周一至周日键盘操作、周规则文字、第一天导航、复盘与 390px 窄窗口。截图：build/weekly-editor-desktop.png、build/weekly-composer-desktop.png、build/weekly-editor-mobile.png。全部使用独立示例数据，未修改个人记录。

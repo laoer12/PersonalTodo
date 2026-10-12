@@ -92,6 +92,7 @@ final class Store {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", t.id); m.put("title", t.title); m.put("notes", t.notes); m.put("category", t.category);
         m.put("repeat", t.repeat); m.put("start", t.start.toString()); m.put("end", t.end == null ? null : t.end.toString());
+        m.put("weekDays", t.repeat.equals("weekly") ? Model.effectiveWeekDays(t).stream().sorted().toList() : List.of());
         m.put("time", t.time == null ? null : t.time.toString()); m.put("priority", t.priority);
         m.put("done", strings(t.done)); m.put("deferred", strings(t.deferred)); m.put("notified", strings(t.notified));
         Map<String, Object> reports = new TreeMap<>(); t.completionReports.forEach((date, text) -> reports.put(date.toString(), text)); m.put("completionReports", reports);
@@ -130,6 +131,9 @@ final class Store {
         t.notes = string(m.get("notes"), 10000); t.category = string(m.get("category"), 40);
         t.repeat = string(m.get("repeat"), 20); if (!Arrays.asList(Model.REPEATS).contains(t.repeat)) throw new IllegalArgumentException("重复规则无效");
         t.start = LocalDate.parse(string(m.get("start"), 10));
+        if (m.containsKey("weekDays")) t.weekDays = Model.parseWeekDays(m.get("weekDays"));
+        if (t.repeat.equals("weekly")) { if (t.weekDays.isEmpty()) t.weekDays.add(t.start.getDayOfWeek().getValue()); }
+        else t.weekDays.clear();
         if (m.get("end") != null) { t.end = LocalDate.parse(string(m.get("end"), 10)); if (t.end.isBefore(t.start)) throw new IllegalArgumentException("结束日期早于开始日期"); }
         if (m.get("time") != null) { t.time = LocalTime.parse(string(m.get("time"), 5)); if (t.time.getSecond() != 0) throw new IllegalArgumentException("提醒时间无效"); }
         if (!(m.get("priority") instanceof Number p) || p.doubleValue() != p.intValue() || p.intValue() < 0 || p.intValue() > 3) throw new IllegalArgumentException("优先级无效");

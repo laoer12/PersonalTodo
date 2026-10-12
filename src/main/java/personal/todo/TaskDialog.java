@@ -88,6 +88,7 @@ final class TaskDialog extends JDialog {
             t.repeat = template ? "once" : Model.REPEATS[repeat.getSelectedIndex()]; t.time = alarm; t.priority = priority.getSelectedIndex(); t.notes = notes.getText();
             if (original != null) {
                 t.id = original.id; t.end = original.end;
+                if (t.repeat.equals("weekly") && original.repeat.equals("weekly")) t.weekDays.addAll(Model.effectiveWeekDays(original));
                 t.done.addAll(original.done); t.deferred.addAll(original.deferred); t.notified.addAll(original.notified);
                 if (!Objects.equals(t.time, original.time)) t.notified.remove(LocalDate.now());
                 if (t.end != null && t.end.isBefore(t.start)) throw new IllegalArgumentException("开始日期不能晚于计划的结束日期。");

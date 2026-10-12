@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { request, windowEvent, localDate, shiftDate, weekRange } from './api'
+import { request, windowEvent, localDate, shiftDate, weekRange, firstScheduledDate } from './api'
 import Sidebar from './components/Sidebar.vue'
 import TaskComposer from './components/TaskComposer.vue'
 import TaskRow from './components/TaskRow.vue'
@@ -128,16 +128,23 @@ function newTask(template = false, selected) {
 }
 function edit(task) { templateEditor.value = view.value === 'templates'; editor.value = task }
 async function saveTask(task) {
-  if (task.id && !templateEditor.value && (task.start !== editor.value.start || task.repeat !== editor.value.repeat) && !confirm('修改日期或重复规则将影响此计划的所有日期，继续保存？')) return
+  if (task.id && !templateEditor.value && (task.start !== editor.value.start || task.repeat !== editor.value.repeat || (task.repeat === 'weekly' && JSON.stringify(task.weekDays) !== JSON.stringify(editor.value.weekDays))) && !confirm('修改日期或重复规则将影响此计划的所有日期，继续保存？')) return
   if (await action({ type: 'task.save', task, template: templateEditor.value, ...(task.id ? { expected: editor.value } : {}) })) {
     editor.value = null
     if (!task.id) {
       search.value = ''; category.value = ''; status.value = 'all'
-      if (!templateEditor.value && !(view.value === 'week' && task.start >= periodFrom.value && task.start <= periodTo.value)) await navigate(task.start === today.value ? 'today' : 'date', task.start)
+      const firstDate = firstScheduledDate(task)
+      if (!templateEditor.value && !(view.value === 'week' && firstDate >= periodFrom.value && firstDate <= periodTo.value)) await navigate(firstDate === today.value ? 'today' : 'date', firstDate)
     }
   }
 }
-async function addTask(task) { if (await action({ type: 'task.save', task })) { composerKey.value++; search.value = ''; category.value = ''; status.value = 'all' } }
+async function addTask(task) {
+  if (await action({ type: 'task.save', task })) {
+    composerKey.value++; search.value = ''; category.value = ''; status.value = 'all'
+    const firstDate = firstScheduledDate(task)
+    if (firstDate !== task.start) notify(`已添加，下次安排：${firstDate}`)
+  }
+}
 function complete(task, value, selected = date.value) {
   if (busy.value || completion.value) return
   if (value && selected === today.value) {

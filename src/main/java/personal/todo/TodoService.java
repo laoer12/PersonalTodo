@@ -51,6 +51,11 @@ final class TodoService {
                 task.title = text(fields, "title", 160).strip(); task.notes = optionalText(fields, "notes", 10000);
                 task.category = optionalText(fields, "category", 40).strip(); if (task.category.isEmpty()) task.category = "生活";
                 task.start = LocalDate.parse(text(fields, "start", 10)); task.repeat = template ? "once" : text(fields, "repeat", 20);
+                task.weekDays = fields.containsKey("weekDays") ? Model.parseWeekDays(fields.get("weekDays")) : new TreeSet<>();
+                if (task.repeat.equals("weekly")) {
+                    if (!fields.containsKey("weekDays")) task.weekDays.addAll(old != null && old.repeat.equals("weekly") ? Model.effectiveWeekDays(old) : Set.of(task.start.getDayOfWeek().getValue()));
+                    if (task.weekDays.isEmpty()) throw new IllegalArgumentException("请至少选择一个每周重复日期。");
+                } else task.weekDays.clear();
                 Object alarm = fields.get("time"); LocalTime time = alarm == null || alarm.equals("") ? null : LocalTime.parse(text(fields, "time", 5));
                 if (old != null && !Objects.equals(time, old.time)) task.notified.remove(LocalDate.now()); task.time = time;
                 Object priority = fields.get("priority"); if (!(priority instanceof Number p) || p.doubleValue() != p.intValue()) throw new IllegalArgumentException("优先级无效。"); task.priority = p.intValue();
@@ -102,6 +107,7 @@ final class TodoService {
             }
             case "template.create" -> {
                 Model.Task copy = Model.copyPlan(Model.find(next, text(request, "id", 100))); copy.start = LocalDate.now(); copy.end = null; copy.repeat = "once";
+                copy.weekDays.clear();
                 next.templates.add(copy); message = "已保存为每日模板";
             }
             case "template.apply" -> {
@@ -110,6 +116,7 @@ final class TodoService {
                     Model.Task template = next.templates.stream().filter(t -> t.id.equals(id)).findFirst().orElseThrow(() -> new IllegalArgumentException("模板已不存在。"));
                     if (next.tasks.stream().anyMatch(t -> Model.occurs(t, date) && t.title.equals(template.title) && t.category.equals(template.category))) { skipped++; continue; }
                     Model.Task copy = Model.copyPlan(template); copy.start = date; copy.end = null; copy.repeat = "once"; next.tasks.add(copy); added++;
+                    copy.weekDays.clear();
                 }
                 message = "已添加 " + added + " 项" + (skipped > 0 ? "，跳过 " + skipped + " 项当天已有任务" : "");
             }
@@ -231,6 +238,7 @@ final class TodoService {
     private static boolean samePlan(Model.Task task, Map<String, Object> expected) {
         return Objects.equals(task.title, expected.get("title")) && Objects.equals(task.notes, expected.get("notes"))
             && Objects.equals(task.category, expected.get("category")) && Objects.equals(task.repeat, expected.get("repeat"))
+            && (!task.repeat.equals("weekly") || Model.effectiveWeekDays(task).equals(expected.containsKey("weekDays") ? Model.parseWeekDays(expected.get("weekDays")) : Set.of(LocalDate.parse(text(expected, "start", 10)).getDayOfWeek().getValue())))
             && Objects.equals(task.start.toString(), expected.get("start")) && Objects.equals(task.end == null ? null : task.end.toString(), expected.get("end"))
             && Objects.equals(task.time == null ? null : task.time.toString(), expected.get("time"))
             && expected.get("priority") instanceof Number priority && priority.intValue() == task.priority

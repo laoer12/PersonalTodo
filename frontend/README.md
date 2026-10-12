@@ -15,6 +15,7 @@
 | `src/components/MemoPage.vue` | 备忘录列表、编辑、预览和回收站 | `computed` 搜索排序、自动保存、输入法事件、组件 `defineExpose`、异步操作排队 |
 | `src/markdown.js` | Markdown 解析和预览清理 | 第三方库调用、预览与原始正文分离 |
 | `src/components/TaskEditor.vue` | 编辑弹窗 | 校验、生命周期、键盘事件 |
+| `src/components/WeekdayPicker.vue` | 每周日期多选 | `props`、`emit`、数组状态、原生复选框与组件复用 |
 | `src/components/DailyReview.vue` | 复盘输入 | 输入事件、`watch` |
 | `src/components/HistoryPage.vue` | 历史事项与完成情况阅读 | 周日期推导、状态分组、选中事项、只读 / 编辑切换、响应式布局 |
 | `src/history.css` | 历史页样式 | 页面内的 Grid 两栏、日期导航、窄窗口布局 |

@@ -18,6 +18,7 @@ final class Model {
         LocalDate start = LocalDate.now(), end;
         LocalTime time;
         int priority;
+        Set<Integer> weekDays = new TreeSet<>();
         Set<LocalDate> done = new LinkedHashSet<>(), deferred = new LinkedHashSet<>(), notified = new LinkedHashSet<>();
         Map<LocalDate, String> completionReports = new TreeMap<>();
         List<Step> steps = new ArrayList<>();
@@ -42,12 +43,25 @@ final class Model {
         return switch (t.repeat) {
             case "daily" -> true;
             case "weekdays" -> date.getDayOfWeek().getValue() <= 5;
-            case "weekly" -> date.getDayOfWeek() == t.start.getDayOfWeek();
+            case "weekly" -> effectiveWeekDays(t).contains(date.getDayOfWeek().getValue());
             case "monthly" -> date.getDayOfMonth() == Math.min(t.start.getDayOfMonth(), date.lengthOfMonth());
             default -> date.equals(t.start);
         };
     }
     static boolean open(Task t, LocalDate date) { return !t.done.contains(date) && !t.deferred.contains(date); }
+    static Set<Integer> effectiveWeekDays(Task task) {
+        return task.weekDays.isEmpty() ? Set.of(task.start.getDayOfWeek().getValue()) : task.weekDays;
+    }
+    static Set<Integer> parseWeekDays(Object value) {
+        if (!(value instanceof List<?> days) || days.size() > 7) throw new IllegalArgumentException("每周重复日期应为周一至周日的列表。");
+        Set<Integer> result = new TreeSet<>();
+        for (Object day : days) {
+            if (!(day instanceof Number n) || n.doubleValue() != n.intValue() || n.intValue() < 1 || n.intValue() > 7)
+                throw new IllegalArgumentException("每周重复日期应为周一至周日。");
+            result.add(n.intValue());
+        }
+        return result;
+    }
     static void mark(Set<LocalDate> dates, LocalDate date, boolean value) {
         if (value) dates.add(date); else dates.remove(date);
     }
@@ -59,6 +73,7 @@ final class Model {
         Task t = new Task();
         t.title = source.title; t.notes = source.notes; t.category = source.category;
         t.repeat = source.repeat; t.priority = source.priority; t.start = source.start; t.end = source.end; t.time = source.time;
+        t.weekDays.addAll(source.weekDays);
         for (Step step : source.steps) { Step s = new Step(); s.title = step.title; t.steps.add(s); }
         return t;
     }
@@ -69,6 +84,7 @@ final class Model {
         Task copy = null;
         if (!occurs(task, next)) {
             copy = copyPlan(task); copy.start = next; copy.end = null; copy.repeat = "once";
+            copy.weekDays.clear();
             data.tasks.add(copy);
         }
         task.deferred.add(source);

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue'
 import { IconCircleCheckFilled, IconCircle, IconArrowRight, IconArrowLeft, IconChevronUp, IconChevronDown, IconPencil } from '@tabler/icons-vue'
-import { shiftDate, weekRange } from '../api'
+import { shiftDate, weekRange, repeatLabel } from '../api'
 
 const props = defineProps({ tasks: Array, date: String, today: String, busy: Boolean, note: String, saving: Boolean, noteDirty: Boolean })
 const emit = defineEmits(['date', 'note', 'report', 'finish-review'])
@@ -35,7 +35,6 @@ async function chooseTask(task) {
   await nextTick()
   if (window.matchMedia('(max-width: 850px)').matches) detailPane.value?.scrollIntoView({ block: 'start' })
 }
-const repeats = { once: '单次', daily: '每天', weekdays: '工作日', weekly: '每周', monthly: '每月' }
 </script>
 
 <template>
@@ -76,7 +75,7 @@ const repeats = { once: '单次', daily: '每天', weekdays: '工作日', weekly
         <template v-if="selectedTask">
           <div class="history-detail-heading"><h2>{{ selectedTask.title }}</h2><p><component :is="isDone(selectedTask) ? IconCircleCheckFilled : isDeferred(selectedTask) ? IconArrowRight : IconCircle" :size="21" /><span>{{ isDone(selectedTask) ? '已完成' : isDeferred(selectedTask) ? `已顺延至 ${shiftDate(date, 1)}` : '未完成' }}</span><span class="muted">{{ dayLabel }} · {{ selectedTask.category }}</span></p></div>
           <section class="history-report"><div class="history-detail-section-heading"><h3>{{ isDone(selectedTask) ? '完成情况' : report ? '上次填写的情况' : '事项情况' }}</h3><button v-if="isDone(selectedTask)" class="secondary" :disabled="busy" @click="emit('report', selectedTask)"><IconPencil :size="15" />{{ report ? '修改完成情况' : '补充完成情况' }}</button></div><p v-if="report" class="history-report-text" tabindex="0">{{ report }}</p><p v-else class="history-placeholder">{{ isDone(selectedTask) ? '未填写完成情况。' : isDeferred(selectedTask) ? '该事项已顺延到下一天。' : '该事项当天未完成。' }}</p></section>
-          <details v-if="selectedTask.notes || selectedTask.steps.length" class="history-plan-details"><summary>计划详情 <span>{{ repeats[selectedTask.repeat] }}<template v-if="selectedTask.time"> · {{ selectedTask.time }}</template></span></summary><p v-if="selectedTask.notes">{{ selectedTask.notes }}</p><ul v-if="selectedTask.steps.length"><li v-for="(step, index) in selectedTask.steps" :key="index"><component :is="step.done.includes(date) ? IconCircleCheckFilled : IconCircle" :size="16" />{{ step.title }}</li></ul></details>
+          <details v-if="selectedTask.notes || selectedTask.steps.length" class="history-plan-details"><summary>计划详情 <span>{{ repeatLabel(selectedTask) }}<template v-if="selectedTask.time"> · {{ selectedTask.time }}</template></span></summary><p v-if="selectedTask.notes">{{ selectedTask.notes }}</p><ul v-if="selectedTask.steps.length"><li v-for="(step, index) in selectedTask.steps" :key="index"><component :is="step.done.includes(date) ? IconCircleCheckFilled : IconCircle" :size="16" />{{ step.title }}</li></ul></details>
         </template>
         <div v-else class="history-detail-empty"><h2>这一天暂无事项</h2><p>仍然可以记录当天的复盘。</p></div>
         <section class="history-review">

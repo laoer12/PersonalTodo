@@ -79,6 +79,7 @@ final class SelfTest {
         } finally { store.release(); cleanup(folder); }
         count += MemoSelfTest.run();
         count += CompletionSelfTest.run();
+        count += WeeklyRepeatSelfTest.run();
         System.out.println("All " + count + " checks passed.");
     }
     static void ui() throws Exception {
