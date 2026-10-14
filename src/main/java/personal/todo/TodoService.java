@@ -13,6 +13,9 @@ final class TodoService {
 
     TodoService(Store store, Model.Data data) { this.store = store; this.data = data; }
     synchronized Model.Data copy() { return Store.copy(data); }
+    synchronized Map<String, Object> startupReview(LocalDate today, String windowId) throws IOException {
+        return new StartupReview(store).open(data, today, windowId);
+    }
     synchronized Map<String, Object> state(LocalDate date) {
         return state(date, null, null);
     }

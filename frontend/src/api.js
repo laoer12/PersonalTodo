@@ -5,7 +5,7 @@ if (hash.has('token')) {
   history.replaceState(null, '', location.pathname)
 }
 export function token() { return sessionStorage.getItem('todo-token') || '' }
-const windowId = crypto.randomUUID()
+export const windowId = crypto.randomUUID()
 
 export async function request(path, body) {
   const response = await fetch(`/api/${path}`, {

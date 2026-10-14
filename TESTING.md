@@ -9,6 +9,7 @@
 | 待办 / HTTP | npm.cmd run test:e2e | 认证、任务、周期、子任务、模板、复盘、备份、重启和关闭 |
 | 历史与菜单 | npm.cmd run test:history-ui | 周日期与任意日期、状态统计、历史情况补充 / 修改、失败重试、多窗口冲突、只读 / 编辑、切换保存与窄窗口 |
 | 指定星期 | npm.cmd run test:weekly-ui | 星期默认值 / 多选、校验、编辑确认、历史保留、快捷添加、首次日期、窄窗口、重启 |
+| 昨日回顾 | npm.cmd run test:startup-review | 首次展示、多窗口与重启去重、正文、失败重试、复盘入口、焦点和窄窗口 |
 | 备忘录 | npm.cmd run test:memos | Markdown、失败、冲突、回收站、导出、组合输入和重启 |
 | 完成情况 | npm.cmd run test:completion | 弹窗、取消、原子保存、日期隔离、重试和备份 |
 
@@ -20,6 +21,7 @@ Set-Location frontend
 npm.cmd run test:e2e
 npm.cmd run test:history-ui
 npm.cmd run test:weekly-ui
+npm.cmd run test:startup-review
 npm.cmd run test:memos
 npm.cmd run test:completion
 ```
@@ -57,3 +59,13 @@ Windows x64 便携版使用 Temurin 21.0.12.1+1；从实际 ZIP 解压到另一�
 新增 31 项核心检查覆盖单日 / 多日循环、开始 / 结束边界、提醒与去重、旧版数据读取、无效输入不落盘、备份与重启、星期修改保留旧记录、并发编辑冲突、顺延及模板。数据格式仍为 JSON v1，weekDays 为新增可选字段；旧数据按开始日期的星期读取，无需手动迁移。
 
 界面覆盖新建、编辑、快捷添加、至少选一天、周一至周日键盘操作、周规则文字、第一天导航、复盘与 390px 窄窗口。截图：build/weekly-editor-desktop.png、build/weekly-composer-desktop.png、build/weekly-editor-mobile.png。全部使用独立示例数据，未修改个人记录。
+
+## 2.4.0 昨日回顾验证（2026-10-14，本机）
+
+共 256 项检查通过：146 项 Java 核心、9 项原生桌面、41 项待办 / HTTP、30 项历史与编辑器、15 项指定星期、15 项昨日回顾。昨日回顾套件另用便携版自带运行环境重复验证，不重复计数。
+
+新增 16 项核心检查覆盖日期、仅昨日完成事项、已修改日期规则的旧记录、完整 / 缺失正文、计划数据及 revision 不变、回执重启持久化、次日展示、空日跳过、同时打开仅一个窗口展示、无效窗口和存储失败。回执保存为数据目录中的 startup-review.json，不混入 data.json 或计划备份。
+
+界面检查覆盖 1487 × 1058 设计对照、1104 × 694 紧凑窗口、390 × 844 窄窗口、长正文键盘滚动、焦点约束、关闭 / 开始今天 / 指定日期复盘、失败重试及响应丢失后的同窗口恢复。所有数据使用隔离目录。
+
+截图：build/yesterday-review-desktop.png、build/yesterday-review-compact.png、build/yesterday-review-long-report.png、build/yesterday-review-mobile.png。

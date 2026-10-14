@@ -1,6 +1,6 @@
 {
   "name": "personal-todo-frontend",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,8 @@
     "test:memos": "node tests/memos.mjs",
     "test:completion": "node tests/completion.mjs",
     "test:history-ui": "node tests/history-ui.mjs",
-    "test:weekly-ui": "node tests/weekly-ui.mjs"
+    "test:weekly-ui": "node tests/weekly-ui.mjs",
+    "test:startup-review": "node tests/startup-review.mjs"
   },
   "dependencies": {
     "@tabler/icons-vue": "3.49.0",

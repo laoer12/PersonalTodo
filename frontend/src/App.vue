@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { request, windowEvent, localDate, shiftDate, weekRange, firstScheduledDate } from './api'
+import { request, windowEvent, windowId, localDate, shiftDate, weekRange, firstScheduledDate } from './api'
 import Sidebar from './components/Sidebar.vue'
 import TaskComposer from './components/TaskComposer.vue'
 import TaskRow from './components/TaskRow.vue'
@@ -11,6 +11,7 @@ import PeriodPlan from './components/PeriodPlan.vue'
 import MemoPage from './components/MemoPage.vue'
 import CompletionDialog from './components/CompletionDialog.vue'
 import HistoryPage from './components/HistoryPage.vue'
+import YesterdayReview from './components/YesterdayReview.vue'
 import { IconChevronLeft, IconChevronRight, IconCalendar } from '@tabler/icons-vue'
 import './history.css'
 
@@ -24,7 +25,8 @@ const loading = ref(true), busy = ref(false), connected = ref(false), error = re
 const search = ref(''), status = ref('all'), category = ref(''), showFilters = ref(false), composerKey = ref(0)
 const editor = ref(null), templateEditor = ref(false), picker = ref(false), chosen = ref([])
 const completion = ref(null), completionError = ref('')
-const interactionLocked = computed(() => busy.value || Boolean(completion.value))
+const startupReview = ref(null), startupReviewChecking = ref(true), startupReviewChecked = ref(false), startupReviewError = ref('')
+const interactionLocked = computed(() => busy.value || Boolean(completion.value) || Boolean(startupReview.value) || startupReviewChecking.value)
 const note = ref(''), noteBase = ref(''), noteDirty = ref(false), saving = ref(false)
 const memoPage = ref(null)
 async function flushMemo() { if (memoPage.value) await memoPage.value.flush() }
@@ -48,6 +50,21 @@ const tasks = computed(() => {
 function notify(message) { toast.value = message; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.value = '' }, 6000) }
 function fail(e) { error.value = e.message || '连接失败，请从托盘重新打开。' }
 function enqueue(work) { const next = queue.then(work); queue = next.catch(() => {}); return next }
+async function checkStartupReview() {
+  if (startupReviewChecked.value || exited.value || editor.value || picker.value || completion.value) return
+  startupReviewChecking.value = true; startupReviewError.value = ''
+  try {
+    const review = await request('startup-review', { windowId })
+    startupReviewChecked.value = true
+    if (review.show) startupReview.value = review
+  } catch { startupReviewError.value = '昨日回顾暂时无法读取，可以稍后重试。' }
+  finally { startupReviewChecking.value = false }
+}
+async function openYesterdayHistory() {
+  const selected = startupReview.value.date
+  await navigate('history', selected)
+  if (!error.value && view.value === 'history' && date.value === selected) startupReview.value = null
+}
 
 async function load() {
   const sequence = ++readSequence, selected = date.value, scope = `${view.value}/${periodFrom.value}/${periodTo.value}`
@@ -193,20 +210,21 @@ async function exit() {
 }
 function closing() { if (!exited.value) { const memo = memoPage.value?.closingDraft(); windowEvent('closed', { ...(noteDirty.value ? { date: date.value, text: note.value, base: noteBase.value } : {}), ...(memo ? { memo } : {}) }) } }
 function shortcut(event) {
-  if (!event.ctrlKey || busy.value || editor.value || picker.value || completion.value) return
+  if (!event.ctrlKey || busy.value || editor.value || picker.value || completion.value || startupReview.value || startupReviewChecking.value) return
   if (event.key.toLowerCase() === 'n' && view.value !== 'memos') { event.preventDefault(); newTask() }
   if (event.key.toLowerCase() === 't') { event.preventDefault(); navigate('today') }
 }
 async function refresh() {
-  if (busy.value || saving.value || exited.value || completion.value) return
+  if (busy.value || saving.value || exited.value || completion.value || startupReview.value || startupReviewChecking.value) return
   try {
     if (view.value === 'today' && !noteDirty.value && date.value !== localDate()) date.value = localDate()
     if (view.value === 'tomorrow' && !noteDirty.value) date.value = shiftDate(localDate(), 1)
     await load()
+    if (!startupReviewChecked.value && !startupReviewError.value && !editor.value && !picker.value && view.value === 'today') await checkStartupReview()
   } catch (e) { connected.value = false; fail(e) }
 }
 onMounted(async () => {
-  try { await load() } catch (e) { loading.value = false; fail(e) }
+  try { await load(); await checkStartupReview() } catch (e) { loading.value = false; startupReviewChecking.value = false; fail(e) }
   windowEvent('heartbeat'); heartbeatTimer = setInterval(() => windowEvent('heartbeat'), 2000)
   refreshTimer = setInterval(refresh, 20000)
   window.addEventListener('focus', refresh); window.addEventListener('pagehide', closing)
@@ -218,12 +236,13 @@ onUnmounted(() => { clearInterval(refreshTimer); clearInterval(heartbeatTimer); 
 <template>
   <div v-if="exited" class="exit-screen"><img src="/icon.svg" alt="" /><h1>已完全退出</h1><p>后台提醒已停止，下次双击程序即可打开。</p></div>
   <div v-else class="app-shell" :aria-busy="busy">
-    <Sidebar :view="view" :selected="date" :busy="interactionLocked" @navigate="navigate" @date="chooseDate" @new="newTask()" @folder="native('folder', { name: $event })" @exit="exit" />
-    <main :class="['main-content', { 'memo-main': view === 'memos', 'history-main': view === 'history' }]">
+    <Sidebar :inert="Boolean(startupReview) || startupReviewChecking" :view="view" :selected="date" :busy="interactionLocked" @navigate="navigate" @date="chooseDate" @new="newTask()" @folder="native('folder', { name: $event })" @exit="exit" />
+    <main :inert="Boolean(startupReview) || startupReviewChecking" :class="['main-content', { 'memo-main': view === 'memos', 'history-main': view === 'history' }]">
       <header v-if="view !== 'memos'" class="page-header"><div><h1>{{ titles[view] }}</h1><p>{{ view === 'week' ? `${periodFrom} — ${periodTo}` : dated ? dateText : view === 'plans' ? '为重要的事，留出位置。' : view === 'templates' ? '把熟悉的节奏，轻松带入每一天。' : '让计划按照你的习惯运行。' }}</p></div>
         <div class="header-actions"><template v-if="view === 'history'"><button class="icon-button" aria-label="上一周复盘" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, -7))"><IconChevronLeft :size="19" /></button><button class="icon-button" aria-label="下一周复盘" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, 7))"><IconChevronRight :size="19" /></button><label class="history-date-picker"><IconCalendar :size="18" /><span>选择日期</span><input type="date" aria-label="复盘日期" :value="date" :disabled="interactionLocked" @change="chooseDate($event.target.value)" /></label></template><template v-else-if="dated"><button class="icon-button" aria-label="前一天" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, -1))">‹</button><button class="icon-button" aria-label="后一天" :disabled="interactionLocked" @click="chooseDate(shiftDate(date, 1))">›</button></template><span v-if="view !== 'history' || !connected" :class="['connection', { offline: !connected }]">●&nbsp; {{ connected ? '本地提醒已就绪' : '连接已断开' }}</span></div>
       </header>
       <div v-if="error" class="error-banner" role="alert">{{ error }}<button class="text-button" @click="refresh">重试连接</button><button class="text-button" @click="error = ''">关闭</button></div>
+      <div v-if="startupReviewError" class="error-banner" role="alert">{{ startupReviewError }}<button class="text-button" :disabled="busy || startupReviewChecking" @click="checkStartupReview">重试昨日回顾</button></div>
       <div v-if="loading" class="empty-state">正在读取本地计划…</div>
       <template v-else>
         <MemoPage v-if="view === 'memos'" ref="memoPage" @notify="notify" />
@@ -244,6 +263,7 @@ onUnmounted(() => { clearInterval(refreshTimer); clearInterval(heartbeatTimer); 
         </template>
       </template>
     </main>
+    <YesterdayReview v-if="startupReview" :review="startupReview" :busy="busy" :error="error" @dismiss="startupReview = null" @history="openYesterdayHistory" />
     <TaskEditor v-if="editor" :task="editor" :categories="categories" :template="templateEditor" :busy="busy" @save="saveTask" @cancel="editor = null" />
     <CompletionDialog v-if="completion" :task="completion.task" :date="completion.date" :initial="completion.initial" :mode="completion.mode" :busy="busy" :error="completionError" @save="saveCompletion" @cancel="completion = null" />
     <div v-if="picker" class="modal-backdrop" @click.self="picker = false"><section class="modal template-picker" role="dialog" aria-modal="true" aria-labelledby="picker-title"><div class="modal-heading"><h2 id="picker-title">套用每日模板</h2><button class="icon-button" aria-label="关闭模板选择" @click="picker = false">×</button></div><p class="muted">添加到 {{ date }}，当天已有的同名同分类任务会跳过。</p><label v-for="task in data.templates" :key="task.id" class="template-option"><input v-model="chosen" type="checkbox" :value="task.id" />{{ task.title }}<small>{{ task.category }}</small></label><p v-if="!data.templates.length" class="empty-state">还没有模板。可在任务的“更多”菜单中保存。</p><div class="modal-footer"><button class="secondary" @click="picker = false">取消</button><button class="primary" :disabled="busy || !chosen.length" @click="applySelected">添加到当天</button></div></section></div>

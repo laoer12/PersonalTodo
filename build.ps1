@@ -4,7 +4,7 @@ param(
     [switch]$SkipTests,
     [string]$PackageDirectory = (Join-Path $PSScriptRoot 'release'),
     [string]$JdkDirectory = '',
-    [string]$Version = '2.3.0'
+    [string]$Version = '2.4.0'
 )
 $ErrorActionPreference = 'Stop'
 $todoRoot = $PSScriptRoot

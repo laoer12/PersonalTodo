@@ -80,6 +80,7 @@ final class SelfTest {
         count += MemoSelfTest.run();
         count += CompletionSelfTest.run();
         count += WeeklyRepeatSelfTest.run();
+        count += StartupReviewSelfTest.run();
         System.out.println("All " + count + " checks passed.");
     }
     static void ui() throws Exception {

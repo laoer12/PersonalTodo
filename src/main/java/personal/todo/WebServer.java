@@ -81,6 +81,7 @@ final class WebServer implements AutoCloseable {
         if (!exchange.getRequestMethod().equals("POST")) { json(exchange, 405, Map.of("error", "不支持的请求方式")); return; }
         if (body == null) body = readBody(exchange);
         switch (path) {
+            case "/api/startup-review" -> json(exchange, 200, service.startupReview(LocalDate.now(), TodoService.text(body, "windowId", 36)));
             case "/api/action" -> json(exchange, 200, service.action(body));
             case "/api/memos" -> json(exchange, 200, service.memoAction(body));
             case "/api/native" -> {
